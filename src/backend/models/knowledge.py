@@ -12,6 +12,7 @@ class KnowledgeNode(BaseModel):
     textbook_name: str
     chunk_id: str = ""
     confidence: float = 0.8
+    textbook_count: int = 1  # how many textbooks contributed to this node (after merge)
 
 
 class KnowledgeEdge(BaseModel):

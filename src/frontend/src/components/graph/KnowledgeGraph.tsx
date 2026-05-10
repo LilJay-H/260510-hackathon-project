@@ -72,15 +72,17 @@ export function KnowledgeGraph() {
 
   const chartNodes = displayNodes.map(n => {
     const degree = degreeMap[n.id] || 0
+    const bookCount = (n as any).textbook_count || 1
     const isSearchMatch = searchTerm && (n.name.includes(searchTerm) || n.definition.includes(searchTerm))
     return {
       ...n,
-      symbolSize: Math.min(50, 10 + degree * 3),
+      // Size = degree + cross-textbook frequency bonus
+      symbolSize: Math.min(60, 10 + degree * 2 + bookCount * 6),
       symbol: CATEGORY_SYMBOLS[n.category] || 'circle',
       itemStyle: {
         color: CATEGORY_COLORS[n.category] || '#6b7280',
-        borderColor: isSearchMatch ? '#ffffff' : undefined,
-        borderWidth: isSearchMatch ? 3 : 0,
+        borderColor: isSearchMatch ? '#ffffff' : bookCount > 1 ? '#fbbf24' : undefined,
+        borderWidth: isSearchMatch ? 3 : bookCount > 1 ? 2 : 0,
       },
     }
   })
@@ -102,7 +104,9 @@ export function KnowledgeGraph() {
         if (params.dataType === 'node') {
           const d = params.data
           const def = d.definition ? d.definition.slice(0, 80) + (d.definition.length > 80 ? '...' : '') : ''
-          return `<b>${d.name}</b><br/><span style="color:#9ca3af">${d.category}</span><br/>${def}`
+          const bookCount = d.textbook_count || 1
+          const freq = bookCount > 1 ? `<br/><span style="color:#fbbf24">跨 ${bookCount} 本教材</span>` : ''
+          return `<b>${d.name}</b><br/><span style="color:#9ca3af">${d.category}</span>${freq}<br/>${def}`
         }
         return ''
       },

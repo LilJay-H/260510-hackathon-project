@@ -169,11 +169,22 @@ async def _llm_judge(candidates: list[tuple[str, str, float]], all_nodes: list[K
 
 def _apply_decisions(nodes, edges, decisions) -> tuple[list, list, set]:
     removed_ids = set()
+    node_map = {n.id: n for n in nodes}
+
     for d in decisions:
         if d.action == "merge":
+            # Count how many unique textbooks contributed to this merge
+            source_textbooks = set()
             for node_id in d.affected_nodes:
+                n = node_map.get(node_id)
+                if n:
+                    source_textbooks.add(n.textbook_id)
                 if node_id != d.result_node:
                     removed_ids.add(node_id)
+            # Update the result node's textbook_count
+            result = node_map.get(d.result_node)
+            if result:
+                result.textbook_count = max(result.textbook_count, len(source_textbooks))
 
     merged_nodes = [n for n in nodes if n.id not in removed_ids]
     return merged_nodes, list(edges), removed_ids
