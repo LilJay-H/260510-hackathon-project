@@ -42,4 +42,14 @@ async def rag_query(req: QueryRequest):
 
 @router.get("/status")
 async def rag_status():
-    return {"status": "ready"}
+    from backend.services.rag_agent import _get_collection, _bm25_index
+    try:
+        collection = _get_collection()
+        count = collection.count()
+    except Exception:
+        count = 0
+    return {
+        "status": "ready",
+        "indexed_chunks": count,
+        "bm25_ready": _bm25_index is not None,
+    }

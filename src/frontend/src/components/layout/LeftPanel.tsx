@@ -111,41 +111,49 @@ export function LeftPanel() {
           教材列表 <span className="text-text-muted">({textbooks.length})</span>
         </label>
         <div className="flex flex-col gap-1.5">
-          {textbooks.map((t) => (
-            <div
-              key={t.id}
-              className="group bg-surface/60 hover:bg-raised/80 rounded-lg p-2.5 transition-colors duration-150 border border-transparent hover:border-border"
-            >
-              <div className="flex items-start gap-2">
-                <div className="w-6 h-6 rounded bg-accent-blue/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <FileText size={12} className="text-accent-blue" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-medium text-text-primary truncate">{t.title}</div>
-                  <div className="text-[10px] text-text-muted mt-0.5 font-mono">
-                    {t.chapters} 章 · {(t.total_chars / 1000).toFixed(0)}k 字
+          {textbooks.map((t) => {
+            const ext = t.id.includes('.') ? t.id.split('.').pop()?.toUpperCase() : 'PDF'
+            return (
+              <div
+                key={t.id}
+                className="group bg-surface/60 hover:bg-raised/80 rounded-lg p-2.5 transition-colors duration-150 border border-transparent hover:border-border"
+              >
+                <div className="flex items-start gap-2">
+                  <div className="w-6 h-6 rounded bg-accent-blue/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <FileText size={12} className="text-accent-blue" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] font-medium text-text-primary truncate">{t.title}</div>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span className="text-[8px] px-1 py-0 rounded bg-surface text-text-muted border border-border">{ext}</span>
+                      <span className="text-[9px] text-text-muted font-mono">
+                        {(t.total_chars / 10000).toFixed(1)}万字
+                      </span>
+                      <span className="text-[9px] text-text-muted">·</span>
+                      <span className="text-[9px] text-text-muted font-mono">{t.chapters}章</span>
+                    </div>
                   </div>
                 </div>
+                <button
+                  onClick={() => handleExtract(t.id)}
+                  disabled={loading['extract']}
+                  className="mt-2 w-full flex items-center justify-center gap-1.5 text-[10px] font-medium bg-accent-blue/10 text-accent-blue px-2 py-1.5 rounded-md hover:bg-accent-blue/20 disabled:opacity-40 transition-colors"
+                >
+                  {loading['extract'] ? (
+                    <>
+                      <div className="w-3 h-3 border border-accent-blue border-t-transparent rounded-full animate-spin" />
+                      提取中...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={10} />
+                      提取知识
+                    </>
+                  )}
+                </button>
               </div>
-              <button
-                onClick={() => handleExtract(t.id)}
-                disabled={loading['extract']}
-                className="mt-2 w-full flex items-center justify-center gap-1.5 text-[10px] font-medium bg-accent-blue/10 text-accent-blue px-2 py-1.5 rounded-md hover:bg-accent-blue/20 disabled:opacity-40 transition-colors"
-              >
-                {loading['extract'] ? (
-                  <>
-                    <div className="w-3 h-3 border border-accent-blue border-t-transparent rounded-full animate-spin" />
-                    提取中...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={10} />
-                    提取知识
-                  </>
-                )}
-              </button>
-            </div>
-          ))}
+            )
+          })}
           {textbooks.length === 0 && !isUploading && (
             <div className="text-center py-8">
               <FileText size={24} className="mx-auto text-text-muted/30 mb-2" />

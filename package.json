@@ -1,0 +1,12 @@
+{
+  "name": "knowledge-integration-agent",
+  "private": true,
+  "version": "1.0.0",
+  "description": "学科知识整合智能体 — 对7本医学教材进行知识整合",
+  "scripts": {
+    "dev:frontend": "cd src/frontend && npm run dev",
+    "dev:backend": "cd src && python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload",
+    "build": "cd src/frontend && npm run build",
+    "start": "docker-compose up --build"
+  }
+}

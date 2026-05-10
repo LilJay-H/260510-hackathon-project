@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useStore } from '../../store/useStore'
 import { api } from '../../api/client'
 import ReactMarkdown from 'react-markdown'
-import { Search, BookOpen, ExternalLink } from 'lucide-react'
+import { Search, BookOpen, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 
 export function RAGTab() {
   const { ragResult, setRAGResult } = useStore()
   const [question, setQuestion] = useState('')
   const [loading, setLoading] = useState(false)
+  const [expandedChunk, setExpandedChunk] = useState<number | null>(null)
 
   const handleQuery = async () => {
     if (!question.trim()) return
@@ -56,7 +57,7 @@ export function RAGTab() {
           {SUGGESTIONS.map((s, i) => (
             <button
               key={i}
-              onClick={() => { setQuestion(s); }}
+              onClick={() => setQuestion(s)}
               className="w-full text-left text-[10px] text-text-secondary bg-surface/40 hover:bg-surface/70 rounded-md px-3 py-2 transition-colors border border-transparent hover:border-border"
             >
               {s}
@@ -105,6 +106,37 @@ export function RAGTab() {
                     <div className="text-[9px] text-text-muted mt-0.5 ml-5">
                       {c.chapter} · 第{c.page}页
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Source chunks — click to expand */}
+          {ragResult.source_chunks && ragResult.source_chunks.length > 0 && (
+            <div>
+              <div className="text-[9px] text-text-muted uppercase tracking-wider mb-2 flex items-center gap-1">
+                <FileText size={9} />
+                原文片段 ({ragResult.source_chunks.length})
+              </div>
+              <div className="space-y-1">
+                {ragResult.source_chunks.map((chunk, i) => (
+                  <div key={i} className="bg-surface/30 rounded-lg border border-border overflow-hidden">
+                    <button
+                      onClick={() => setExpandedChunk(expandedChunk === i ? null : i)}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-surface/50 transition-colors"
+                    >
+                      <span className="text-[9px] text-accent-blue font-mono">chunk {i + 1}</span>
+                      <span className="text-[9px] text-text-muted flex-1 truncate">
+                        {chunk.slice(0, 50)}...
+                      </span>
+                      {expandedChunk === i ? <ChevronUp size={10} className="text-text-muted" /> : <ChevronDown size={10} className="text-text-muted" />}
+                    </button>
+                    {expandedChunk === i && (
+                      <div className="px-3 pb-2 text-[10px] text-text-secondary leading-relaxed border-t border-border pt-2">
+                        {chunk}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

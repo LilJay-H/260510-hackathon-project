@@ -15,6 +15,18 @@ const CATEGORY_COLORS: Record<string, string> = {
   '治疗原则': '#f97316',
 }
 
+// Textbook source colors for "教材来源区分"
+const TEXTBOOK_COLORS: Record<string, string> = {
+  '01_局部解剖学': '#3b82f6',
+  '02_组织学与胚胎学': '#ef4444',
+  '03_生理学': '#10b981',
+  '04_医学微生物学': '#f59e0b',
+  '05_病理学': '#8b5cf6',
+  '06_传染病学': '#06b6d4',
+  '07_病理生理学': '#f97316',
+}
+const TEXTBOOK_COLOR_LIST = Object.values(TEXTBOOK_COLORS)
+
 const CATEGORY_SYMBOLS: Record<string, string> = {
   '核心概念': 'circle',
   '解剖结构': 'roundRect',
@@ -47,6 +59,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
   const { nodes, edges, setSelectedNode } = useStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set())
+  const [colorMode, setColorMode] = useState<'category' | 'textbook'>('category')
   const chartRef = useRef<any>(null)
 
   const degreeMap = useMemo(() => {
@@ -92,13 +105,22 @@ export function KnowledgeGraph({ viewMode }: Props) {
       const bookCount = (n as any).textbook_count || 1
       const isSearchMatch = searchTerm.length > 0 && (n.name.includes(searchTerm) || n.definition.includes(searchTerm))
       const baseSize = Math.min(55, 12 + degree * 2.5 + bookCount * 5)
+
+      // Color by category or by textbook source
+      let nodeColor: string
+      if (colorMode === 'textbook') {
+        nodeColor = TEXTBOOK_COLORS[n.textbook_name] || TEXTBOOK_COLOR_LIST[0]
+      } else {
+        nodeColor = CATEGORY_COLORS[n.category] || '#6b7280'
+      }
+
       return {
         ...n,
         symbolSize: baseSize,
         symbol: CATEGORY_SYMBOLS[n.category] || 'circle',
         name: n.name,
         itemStyle: {
-          color: CATEGORY_COLORS[n.category] || '#6b7280',
+          color: nodeColor,
           borderColor: isSearchMatch
             ? '#ffffff'
             : bookCount > 1
@@ -121,7 +143,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
         },
       }
     })
-  }, [displayNodes, degreeMap, searchTerm])
+  }, [displayNodes, degreeMap, searchTerm, colorMode])
 
   const categories = allCategories.map(c => ({ name: c }))
 
@@ -317,6 +339,29 @@ export function KnowledgeGraph({ viewMode }: Props) {
             )}
           </div>
 
+          {/* Color mode toggle */}
+          <div className="bg-abyss/80 backdrop-blur-sm border border-border rounded-lg px-2.5 py-1.5">
+            <div className="text-[9px] text-text-muted mb-1">着色方式</div>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setColorMode('category')}
+                className={`text-[9px] px-2 py-0.5 rounded-md transition-all ${
+                  colorMode === 'category' ? 'bg-accent-blue/15 text-accent-blue' : 'text-text-muted hover:text-text-secondary'
+                }`}
+              >
+                按分类
+              </button>
+              <button
+                onClick={() => setColorMode('textbook')}
+                className={`text-[9px] px-2 py-0.5 rounded-md transition-all ${
+                  colorMode === 'textbook' ? 'bg-accent-blue/15 text-accent-blue' : 'text-text-muted hover:text-text-secondary'
+                }`}
+              >
+                按教材
+              </button>
+            </div>
+          </div>
+
           {/* Edge legend */}
           <div className="bg-abyss/80 backdrop-blur-sm border border-border rounded-lg px-2.5 py-1.5">
             <div className="text-[9px] text-text-muted mb-1">关系类型</div>
@@ -335,6 +380,21 @@ export function KnowledgeGraph({ viewMode }: Props) {
               ))}
             </div>
           </div>
+
+          {/* Textbook color legend (when in textbook mode) */}
+          {colorMode === 'textbook' && (
+            <div className="bg-abyss/80 backdrop-blur-sm border border-border rounded-lg px-2.5 py-1.5">
+              <div className="text-[9px] text-text-muted mb-1">教材来源</div>
+              <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                {Object.entries(TEXTBOOK_COLORS).map(([name, color]) => (
+                  <div key={name} className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: color }} />
+                    <span className="text-[8px] text-text-muted">{name.replace(/^\d+_/, '')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
