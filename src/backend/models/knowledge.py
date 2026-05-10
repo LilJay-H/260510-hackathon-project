@@ -11,6 +11,7 @@ class KnowledgeNode(BaseModel):
     textbook_id: str
     textbook_name: str
     chunk_id: str = ""
+    confidence: float = 0.8
 
 
 class KnowledgeEdge(BaseModel):

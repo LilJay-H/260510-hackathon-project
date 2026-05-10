@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useStore } from '../../store/useStore'
 import { api } from '../../api/client'
 
+const MODIFY_KEYWORDS = ['保留', '恢复', '删除', '分开', '拆分', '合并']
+
 export function ChatTab() {
-  const { chatMessages, addChatMessage } = useStore()
+  const { chatMessages, addChatMessage, setGraphData } = useStore()
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -11,6 +13,13 @@ export function ChatTab() {
   useEffect(() => {
     scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight)
   }, [chatMessages])
+
+  const refreshGraph = useCallback(async () => {
+    try {
+      const merged = await api.getMerged()
+      if (merged.nodes) setGraphData(merged.nodes, merged.edges || [])
+    } catch { /* graph may not exist yet */ }
+  }, [setGraphData])
 
   const handleSend = async () => {
     if (!input.trim() || loading) return
@@ -22,6 +31,10 @@ export function ChatTab() {
     try {
       const result = await api.chatSend(msg)
       addChatMessage({ role: 'assistant', content: result.response })
+      // Refresh graph if this was a modification action
+      if (MODIFY_KEYWORDS.some(k => msg.includes(k))) {
+        await refreshGraph()
+      }
     } finally {
       setLoading(false)
     }
