@@ -1,1 +1,104 @@
 @import "tailwindcss";
+
+@theme {
+  --font-display: "Outfit", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-body: "Outfit", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+
+  --color-void: #060a14;
+  --color-abyss: #0b1120;
+  --color-deep: #111827;
+  --color-surface: #1a2236;
+  --color-raised: #1f2b42;
+  --color-muted: #2a3a56;
+  --color-border: #1e2d48;
+  --color-border-bright: #2d4a7a;
+
+  --color-text-primary: #e8edf5;
+  --color-text-secondary: #8899b4;
+  --color-text-muted: #4a5d7a;
+
+  --color-accent-blue: #3b82f6;
+  --color-accent-cyan: #06b6d4;
+  --color-accent-purple: #8b5cf6;
+  --color-accent-green: #10b981;
+  --color-accent-amber: #f59e0b;
+  --color-accent-red: #ef4444;
+  --color-accent-pink: #ec4899;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-void);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-muted); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-bright); }
+
+/* Background grid pattern */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Glow effects */
+.glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.15); }
+.glow-cyan { box-shadow: 0 0 20px rgba(6, 182, 212, 0.15); }
+
+/* Node glow animation */
+@keyframes node-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* Slide-in animation */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slide-in-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Category color chips */
+.cat-core { --cat-color: var(--color-accent-blue); }
+.cat-anatomy { --cat-color: var(--color-accent-red); }
+.cat-physiology { --cat-color: var(--color-accent-green); }
+.cat-pathology { --cat-color: var(--color-accent-amber); }
+.cat-clinical { --cat-color: var(--color-accent-purple); }
+.cat-diagnosis { --cat-color: var(--color-accent-cyan); }
+.cat-treatment { --cat-color: #f97316; }
+
+/* Relation edge styles */
+.edge-prerequisite { --edge-color: #ef4444; }
+.edge-parallel { --edge-color: #6b7280; }
+.edge-contains { --edge-color: #3b82f6; }
+.edge-applies_to { --edge-color: #10b981; }
