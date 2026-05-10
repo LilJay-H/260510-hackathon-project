@@ -22,6 +22,8 @@ interface Store {
   addChatMessage: (m: ChatMessage) => void
   loading: Record<string, boolean>
   setLoading: (key: string, v: boolean) => void
+  mergeStats: { beforeNodes: number; beforeEdges: number; afterNodes: number; afterEdges: number } | null
+  setMergeStats: (s: { beforeNodes: number; beforeEdges: number; afterNodes: number; afterEdges: number } | null) => void
 }
 
 export const useStore = create<Store>((set) => ({
@@ -45,4 +47,6 @@ export const useStore = create<Store>((set) => ({
   addChatMessage: (m) => set((s) => ({ chatMessages: [...s.chatMessages, m] })),
   loading: {},
   setLoading: (key, v) => set((s) => ({ loading: { ...s.loading, [key]: v } })),
+  mergeStats: null,
+  setMergeStats: (mergeStats) => set({ mergeStats }),
 }))
