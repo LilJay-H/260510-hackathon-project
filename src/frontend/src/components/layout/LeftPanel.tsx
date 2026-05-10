@@ -34,7 +34,9 @@ export function LeftPanel() {
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
-    const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.pdf'))
+    const files = Array.from(e.dataTransfer.files).filter(f =>
+      /\.(pdf|md|txt)$/i.test(f.name)
+    )
     for (const file of files) {
       await doUpload(file)
     }
@@ -82,19 +84,19 @@ export function LeftPanel() {
             <div className="flex flex-col items-center gap-2">
               <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
               <span className="text-xs text-blue-400">解析中: {uploadingFile}</span>
-              <span className="text-[10px] text-gray-500">PDF 越大耗时越长，请耐心等待</span>
+              <span className="text-[10px] text-gray-500">文件越大耗时越长，请耐心等待</span>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-1">
               <span className="text-lg text-gray-500">+</span>
-              <span className="text-xs text-gray-400">拖拽 PDF 或点击选择</span>
+              <span className="text-xs text-gray-400">拖拽 PDF/MD/TXT 或点击选择</span>
             </div>
           )}
         </div>
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf"
+          accept=".pdf,.md,.txt"
           multiple
           onChange={handleUpload}
           className="hidden"

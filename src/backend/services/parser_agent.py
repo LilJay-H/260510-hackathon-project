@@ -20,6 +20,62 @@ MD_HEADING_RE = re.compile(r'^(#{1,6})\s+(.+)')
 
 def parse_textbook(file_path: str) -> TextbookInfo:
     path = Path(file_path)
+    suffix = path.suffix.lower()
+
+    if suffix == '.md':
+        return _parse_markdown(file_path)
+    elif suffix == '.txt':
+        return _parse_text(file_path)
+    else:
+        return _parse_pdf(file_path)
+
+
+def _parse_markdown(file_path: str) -> TextbookInfo:
+    path = Path(file_path)
+    content = Path(file_path).read_text(encoding='utf-8')
+    chapters = _split_chapters(content, None)
+    for ch in chapters:
+        ch.tables = _extract_table_titles(ch.content)
+    total_chars = sum(ch.char_count for ch in chapters)
+    return TextbookInfo(
+        textbook_id=f"book_{path.stem[:2]}",
+        filename=path.name,
+        title=path.stem,
+        total_pages=0,
+        total_chars=total_chars,
+        chapters=chapters,
+    )
+
+
+def _parse_text(file_path: str) -> TextbookInfo:
+    path = Path(file_path)
+    raw = Path(file_path).read_text(encoding='utf-8')
+    # Insert markdown headings for "第X章" lines so chapter splitting works
+    lines = raw.split('\n')
+    processed = []
+    for line in lines:
+        stripped = line.strip()
+        if re.match(r'^第[一二三四五六七八九十百千\d]+[章篇]', stripped):
+            processed.append(f'## {stripped}')
+        else:
+            processed.append(line)
+    content = '\n'.join(processed)
+    chapters = _split_chapters(content, None)
+    for ch in chapters:
+        ch.tables = _extract_table_titles(ch.content)
+    total_chars = sum(ch.char_count for ch in chapters)
+    return TextbookInfo(
+        textbook_id=f"book_{path.stem[:2]}",
+        filename=path.name,
+        title=path.stem,
+        total_pages=0,
+        total_chars=total_chars,
+        chapters=chapters,
+    )
+
+
+def _parse_pdf(file_path: str) -> TextbookInfo:
+    path = Path(file_path)
     doc = fitz.open(file_path)
 
     md_pages = pymupdf4llm.to_markdown(file_path, page_chunks=True)
@@ -133,11 +189,12 @@ def _split_chapters(full_md: str, doc) -> list[Chapter]:
     if not chapter_starts:
         # Fallback: one big chapter
         content = full_md.strip()
+        total_pages = len(doc) if doc else 0
         return [Chapter(
             chapter_id="ch_00",
             title="全文",
             page_start=1,
-            page_end=len(doc),
+            page_end=total_pages,
             content=content,
             char_count=len(content),
         )]
@@ -164,6 +221,7 @@ def _split_chapters(full_md: str, doc) -> list[Chapter]:
         else:
             merged_segments.append((title, content))
 
+    total_pages = len(doc) if doc else 0
     chapters = []
     for idx, (title, content) in enumerate(merged_segments):
         if len(content) < 200 and chapters:
@@ -175,7 +233,7 @@ def _split_chapters(full_md: str, doc) -> list[Chapter]:
             chapter_id=f"ch_{idx:02d}",
             title=title,
             page_start=1,
-            page_end=len(doc),
+            page_end=total_pages,
             content=content,
             char_count=len(content),
         ))

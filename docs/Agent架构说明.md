@@ -4,22 +4,34 @@
 
 本系统采用**多 Agent 共享内存架构**，由 5 个专职 Agent 组成，通过 Python 模块调用实现零延迟通信。
 
+```mermaid
+graph TD
+    FE[React + ECharts 前端] -->|HTTP API| API[FastAPI 调度层]
+    API --> PA[ParserAgent]
+    API --> EA[ExtractorAgent]
+    API --> IA[IntegratorAgent]
+    API --> RA[RAGAgent]
+    API --> CA[ChatAgent]
+    PA -->|TextbookInfo| EA
+    EA -->|KnowledgeGraph| RA
+    EA -->|KnowledgeGraph| IA
+    IA -->|MergedGraph| FE
+    RA -->|ChromaDB| DB[(向量数据库)]
+    CA -->|修改决策| IA
+    EA -->|LLM 调用| LLM[MiMo 2.5 Pro]
+    IA -->|LLM 调用| LLM
+    CA -->|LLM 调用| LLM
 ```
-┌─────────────────────────────────────────────────┐
-│              React + ECharts 前端                 │
-└──────────────────────┬──────────────────────────┘
-                       │ HTTP API (FastAPI)
-┌──────────────────────▼──────────────────────────┐
-│                FastAPI 调度层                     │
-│    接收请求 → 调度 Agent → 返回结果               │
-└──┬──────┬──────┬──────┬──────┬──────────────────┘
-   │      │      │      │      │
-┌──▼───┐┌─▼────┐┌─▼────┐┌─▼───┐┌─▼────┐
-│Parser││Extract││Integr││ RAG ││ Chat │
-│Agent ││Agent  ││Agent ││Agent││Agent │
-└──────┘└───────┘└──────┘└─────┘└──────┘
-         共享内存（Python 模块调用）
-```
+
+**Agent I/O 签名**:
+
+| Agent | Input | Output |
+|---|---|---|
+| ParserAgent | `file_path: str` | `TextbookInfo` |
+| ExtractorAgent | `TextbookInfo` | `KnowledgeGraph` |
+| IntegratorAgent | `list[KnowledgeGraph]` | `MergedKnowledgeGraph` |
+| RAGAgent | `TextbookInfo` → 索引；`str` → 查询 | `int`（索引数）；`list[dict]`（检索结果） |
+| ChatAgent | `str`（用户消息） | `str`（回复） |
 
 ### 为什么选多 Agent 而非单 Agent
 
@@ -202,3 +214,16 @@ PDF 上传 → ParserAgent → TextbookInfo
 2. **ChatAgent 控制平面**: 将对话作为修改整合方案的接口，每个赛题要求映射到具体 Agent API
 3. **Embedding 粗筛 + LLM 精确判断**: 两阶段对齐平衡效率与准确度
 4. **无 category 预过滤**: 适应医学领域分类边界模糊的特点
+
+---
+
+## 6. 已知局限与改进方案
+
+| 编号 | 局限 | 影响 | 优先级 | 改进方向 |
+|---|---|---|---|---|
+| L1 | bge-small-zh-v1.5 对医学专有名词（如"变质""渗出"）的语义表征不够精确，跨教材对齐时可能漏匹配 | 整合召回率降低 | P1 | 换用 PubMedBERT 或在医学语料上微调 embedding 模型 |
+| L2 | 5 个 Agent 运行在同一进程内，任一 Agent 的异常（如 LLM 超时）可能影响整体服务稳定性 | 生产环境可靠性不足 | P2 | 拆分为独立 microservice + Celery 异步任务队列 |
+| L3 | ChatAgent 依赖关键词匹配进行意图识别，用户措辞复杂时（如"我觉得这两个不太一样，能不能别合在一起"）可能无法正确分类 | 对话体验不完整 | P1 | 升级为 LLM function calling 或接入意图分类小模型 |
+| L4 | 前置依赖链保护仅做简单关系转移，未验证转移后的依赖链是否仍然连贯 | 可能产生逻辑断裂 | P1 | 引入拓扑排序校验，确保依赖链完整性 |
+| L5 | 跨教材对齐阈值 0.70 为经验值，未在标准 benchmark 上验证 | 不同领域可能需要不同阈值 | P0 | 构建标注数据集（100-200 对），基于 precision/recall 曲线确定最优阈值 |
+| L6 | PDF 解析依赖 pymupdf4llm 的 Markdown 转换质量，扫描件 PDF 无法处理 | 部分教材可能解析失败 | P2 | 增加 OCR 预处理（如 Tesseract），支持扫描件 PDF |
