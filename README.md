@@ -1,3 +1,13 @@
+---
+title: 学科知识整合智能体
+emoji: 🧠
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+license: apache-2.0
+---
+
 # 学科知识整合智能体
 
 AI 全栈极速黑客松参赛项目。对 7 本医学教材进行知识整合：自动解析、构建知识图谱、跨教材去重提纯、RAG 精准问答、支持对话修改整合方案。
