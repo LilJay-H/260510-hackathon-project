@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, UploadFile, File
 from pathlib import Path
 from backend.config import UPLOAD_DIR
@@ -13,7 +14,10 @@ _textbooks: dict[str, TextbookInfo] = {}
 async def upload_textbook(file: UploadFile = File(...)):
     upload_dir = Path(UPLOAD_DIR)
     upload_dir.mkdir(parents=True, exist_ok=True)
-    file_path = upload_dir / file.filename
+
+    # Use UUID prefix to avoid filename encoding issues on Windows
+    safe_name = f"{uuid.uuid4().hex[:8]}_{file.filename}"
+    file_path = upload_dir / safe_name
     with open(file_path, "wb") as f:
         f.write(await file.read())
 
