@@ -4,8 +4,18 @@ import pymupdf4llm
 from pathlib import Path
 from backend.models.textbook import TextbookInfo, Chapter
 
-CHAPTER_PATTERN = re.compile(r'^第[一二三四五六七八九十百千\d]+[章篇]')
 SHORT_LINE_THRESHOLD = 15
+# Patterns that indicate TOC/index/bibliography sections
+JUNK_PATTERNS = re.compile(
+    r'(目\s*录|推荐\s*阅读|中英文名词对照|索引|参考文献|附录|图片列表|表格列表|'
+    r'\.{3,}|\.{5,}|End of picture text)'
+)
+# Chapter heading: 第X章 or 第X篇
+CHAPTER_RE = re.compile(r'^(#{1,3}\s+)?第[一二三四五六七八九十百千\d]+[章篇]')
+# Section heading: 第X节
+SECTION_RE = re.compile(r'^(#{1,3}\s+)?第[一二三四五六七八九十百千\d]+[节]')
+# Markdown heading
+MD_HEADING_RE = re.compile(r'^(#{1,6})\s+(.+)')
 
 
 def parse_textbook(file_path: str) -> TextbookInfo:
@@ -41,6 +51,9 @@ def parse_textbook(file_path: str) -> TextbookInfo:
             filtered.append(line)
         full_md += '\n'.join(filtered) + '\n\n'
 
+    # Remove TOC, bibliography, index
+    full_md = _remove_toc_and_index(full_md)
+
     chapters = _split_chapters(full_md, doc)
 
     for ch in chapters:
@@ -68,36 +81,95 @@ def _detect_header_footer(page_texts: list[list[str]], total_pages: int) -> set[
     return {line for line, count in line_counts.items() if count >= threshold}
 
 
-def _split_chapters(full_md: str, doc) -> list[Chapter]:
-    chapters = []
-    lines = full_md.split('\n')
-    current_title = "前言"
-    current_content = []
-    chapter_idx = 0
+def _remove_toc_and_index(md: str) -> str:
+    """Remove TOC (lines with dot leaders) and bibliography/index sections."""
+    lines = md.split('\n')
+    result = []
+    skip = False
 
     for line in lines:
-        if CHAPTER_PATTERN.match(line.strip()):
-            if current_content:
-                content = '\n'.join(current_content)
-                chapters.append(Chapter(
-                    chapter_id=f"ch_{chapter_idx:02d}",
-                    title=current_title,
-                    page_start=1,
-                    page_end=len(doc),
-                    content=content,
-                    char_count=len(content),
-                ))
-                chapter_idx += 1
-            current_title = line.strip()
-            current_content = []
-        else:
-            current_content.append(line)
+        stripped = line.strip()
 
-    if current_content:
-        content = '\n'.join(current_content)
+        # Detect TOC start (line with lots of dots = page number leaders)
+        if re.search(r'\.{5,}', stripped) or re.search(r'\.\s+\d+\s*$', stripped):
+            skip = True
+            continue
+
+        # Detect section headers for junk
+        if JUNK_PATTERNS.search(stripped) and len(stripped) < 30:
+            skip = True
+            continue
+
+        # End of picture text marker
+        if 'End of picture text' in stripped:
+            continue
+
+        # If we were skipping, check if we hit a real chapter heading
+        if skip:
+            if CHAPTER_RE.match(stripped) or (MD_HEADING_RE.match(stripped) and not JUNK_PATTERNS.search(stripped)):
+                skip = False
+            else:
+                continue
+
+        result.append(line)
+
+    return '\n'.join(result)
+
+
+def _split_chapters(full_md: str, doc) -> list[Chapter]:
+    """Split into chapters using heading detection."""
+    lines = full_md.split('\n')
+
+    # Find chapter-level headings (第X章 pattern)
+    chapter_starts = []  # (line_idx, title)
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if CHAPTER_RE.match(stripped):
+            # Clean up the title: remove markdown heading markers and page numbers
+            title = re.sub(r'^#{1,3}\s+', '', stripped)
+            title = re.sub(r'\s*\d+$', '', title).strip()  # Remove trailing page number
+            chapter_starts.append((i, title))
+
+    if not chapter_starts:
+        # Fallback: one big chapter
+        content = full_md.strip()
+        return [Chapter(
+            chapter_id="ch_00",
+            title="全文",
+            page_start=1,
+            page_end=len(doc),
+            content=content,
+            char_count=len(content),
+        )]
+
+    # Build raw segments from each chapter heading
+    raw_segments = []
+    for idx, (start_line, title) in enumerate(chapter_starts):
+        end_line = chapter_starts[idx + 1][0] if idx + 1 < len(chapter_starts) else len(lines)
+        content = '\n'.join(lines[start_line:end_line]).strip()
+        raw_segments.append((title, content))
+
+    # Merge consecutive segments with the same title
+    # (pymupdf4llm outputs the chapter title as a running header on every page)
+    merged_segments = []
+    for title, content in raw_segments:
+        if merged_segments and merged_segments[-1][0] == title:
+            # Same chapter — append content
+            prev_title, prev_content = merged_segments[-1]
+            merged_segments[-1] = (prev_title, prev_content + '\n\n' + content)
+        else:
+            merged_segments.append((title, content))
+
+    chapters = []
+    for idx, (title, content) in enumerate(merged_segments):
+        if len(content) < 200 and chapters:
+            chapters[-1].content += '\n\n' + content
+            chapters[-1].char_count = len(chapters[-1].content)
+            continue
+
         chapters.append(Chapter(
-            chapter_id=f"ch_{chapter_idx:02d}",
-            title=current_title,
+            chapter_id=f"ch_{idx:02d}",
+            title=title,
             page_start=1,
             page_end=len(doc),
             content=content,

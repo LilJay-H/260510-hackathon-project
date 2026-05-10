@@ -753,9 +753,9 @@ CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860"]
 ```python
 # .env 配置
 LLM_PROVIDER=mimo
-LLM_BASE_URL=https://api.xiaomi.com/v1
-LLM_TEXT_MODEL=MiMo-2.5-Pro
-LLM_MULTIMODAL_MODEL=MiMo-Omni
+LLM_BASE_URL=https://token-plan-cn.xiaomimimo.com/v1
+LLM_TEXT_MODEL=mimo-v2.5-pro
+LLM_MULTIMODAL_MODEL=mimo-v2-omni
 LLM_API_KEY=your_key_here
 
 # 切换到其他模型只需改 .env
