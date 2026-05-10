@@ -151,10 +151,14 @@ def _split_chapters(full_md: str, doc) -> list[Chapter]:
 
     # Merge consecutive segments with the same title
     # (pymupdf4llm outputs the chapter title as a running header on every page)
+    def _norm_title(t: str) -> str:
+        """Normalize title for comparison: remove extra spaces."""
+        return re.sub(r'\s+', '', t)
+
     merged_segments = []
     for title, content in raw_segments:
-        if merged_segments and merged_segments[-1][0] == title:
-            # Same chapter — append content
+        norm = _norm_title(title)
+        if merged_segments and _norm_title(merged_segments[-1][0]) == norm:
             prev_title, prev_content = merged_segments[-1]
             merged_segments[-1] = (prev_title, prev_content + '\n\n' + content)
         else:

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from backend.models.textbook import TextbookInfo
@@ -26,23 +27,24 @@ EXTRACT_SYSTEM_PROMPT = """你是一个医学知识提取专家。从给定的�
 async def extract_from_textbook(textbook: TextbookInfo) -> KnowledgeGraph:
     all_nodes: list[KnowledgeNode] = []
     all_edges: list[KnowledgeEdge] = []
-    node_counter = 0
 
+    # Level 1: parallel extraction per section within each chapter
     for ch_idx, chapter in enumerate(textbook.chapters):
         sections = _split_into_sections(chapter.content)
+        valid_sections = [(i, s) for i, s in enumerate(sections) if len(s.strip()) >= 100]
+
+        # All sections in this chapter extracted concurrently
+        tasks = [_extract_from_section(s, textbook, chapter) for _, s in valid_sections]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
         section_nodes_map: dict[int, list[KnowledgeNode]] = {}
-
-        for sec_idx, section in enumerate(sections):
-            if len(section.strip()) < 100:
+        for (sec_idx, _), result in zip(valid_sections, results):
+            if isinstance(result, Exception):
                 continue
-
-            result = await _extract_from_section(section, textbook, chapter)
-
             sec_nodes = []
             for n in result.get("nodes", []):
-                node_counter += 1
                 node = KnowledgeNode(
-                    id=f"{textbook.textbook_id}_n{node_counter:04d}",
+                    id=f"{textbook.textbook_id}_n{len(all_nodes) + 1:04d}",
                     name=n["name"],
                     definition=n["definition"],
                     category=n["category"],
@@ -53,7 +55,6 @@ async def extract_from_textbook(textbook: TextbookInfo) -> KnowledgeGraph:
                 )
                 all_nodes.append(node)
                 sec_nodes.append(node)
-
             section_nodes_map[sec_idx] = sec_nodes
 
             for e in result.get("edges", []):
@@ -61,8 +62,7 @@ async def extract_from_textbook(textbook: TextbookInfo) -> KnowledgeGraph:
                 tgt = _find_node_by_name(e["target_name"], sec_nodes)
                 if src and tgt:
                     all_edges.append(KnowledgeEdge(
-                        source=src.id,
-                        target=tgt.id,
+                        source=src.id, target=tgt.id,
                         relation_type=e["relation_type"],
                         description=e["description"],
                     ))
@@ -78,18 +78,18 @@ async def extract_from_textbook(textbook: TextbookInfo) -> KnowledgeGraph:
                 all_edges.extend(cross_edges)
 
     # Level 3: per-chapter far-distance relations
+    # Each chapter compares its nodes against ALL other chapters' nodes in one call
     chapter_node_groups: dict[str, list[KnowledgeNode]] = {}
     for node in all_nodes:
         chapter_node_groups.setdefault(node.chapter, []).append(node)
 
-    chapter_names = list(chapter_node_groups.keys())
-    for i in range(len(chapter_names)):
-        for j in range(i + 1, len(chapter_names)):
-            ch_a = chapter_node_groups[chapter_names[i]]
-            ch_b = chapter_node_groups[chapter_names[j]]
-            if ch_a and ch_b:
-                far_edges = await _extract_far_relations(ch_a, ch_b)
-                all_edges.extend(far_edges)
+    all_chapter_names = list(chapter_node_groups.keys())
+    for ch_name in all_chapter_names:
+        ch_nodes = chapter_node_groups[ch_name]
+        other_nodes = [n for n in all_nodes if n.chapter != ch_name]
+        if ch_nodes and other_nodes:
+            far_edges = await _extract_far_relations(ch_nodes, other_nodes)
+            all_edges.extend(far_edges)
 
     return KnowledgeGraph(
         textbook_id=textbook.textbook_id,
