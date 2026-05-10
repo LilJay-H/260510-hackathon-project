@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pymupdf4llm
+sentence-transformers
+chromadb
+python-dotenv
+httpx
