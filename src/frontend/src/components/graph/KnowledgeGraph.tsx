@@ -3,7 +3,7 @@ import ReactECharts from 'echarts-for-react'
 import { useStore } from '../../store/useStore'
 import { NodeDetail } from './NodeDetail'
 import type { ViewMode } from '../layout/CenterPanel'
-import { Search, X, Filter, RotateCcw } from 'lucide-react'
+import { Search, X, RotateCcw } from 'lucide-react'
 
 const CATEGORY_COLORS: Record<string, string> = {
   '核心概念': '#3b82f6',
@@ -15,7 +15,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   '治疗原则': '#f97316',
 }
 
-// Textbook source colors for "教材来源区分"
 const TEXTBOOK_COLORS: Record<string, string> = {
   '01_局部解剖学': '#3b82f6',
   '02_组织学与胚胎学': '#ef4444',
@@ -106,7 +105,6 @@ export function KnowledgeGraph({ viewMode }: Props) {
       const isSearchMatch = searchTerm.length > 0 && (n.name.includes(searchTerm) || n.definition.includes(searchTerm))
       const baseSize = Math.min(55, 12 + degree * 2.5 + bookCount * 5)
 
-      // Color by category or by textbook source
       let nodeColor: string
       if (colorMode === 'textbook') {
         nodeColor = TEXTBOOK_COLORS[n.textbook_name] || TEXTBOOK_COLOR_LIST[0]
@@ -125,20 +123,20 @@ export function KnowledgeGraph({ viewMode }: Props) {
             ? '#ffffff'
             : bookCount > 1
               ? '#f59e0b'
-              : 'rgba(255,255,255,0.08)',
+              : 'rgba(255,255,255,0.06)',
           borderWidth: isSearchMatch ? 3 : bookCount > 1 ? 2 : 1,
           shadowColor: isSearchMatch
-            ? 'rgba(255,255,255,0.4)'
+            ? 'rgba(255,255,255,0.3)'
             : bookCount > 1
-              ? 'rgba(245,158,11,0.3)'
-              : 'rgba(0,0,0,0.3)',
-          shadowBlur: isSearchMatch ? 15 : bookCount > 1 ? 10 : 5,
+              ? 'rgba(245,158,11,0.2)'
+              : 'rgba(0,0,0,0.2)',
+          shadowBlur: isSearchMatch ? 12 : bookCount > 1 ? 8 : 4,
         },
         label: {
           show: true,
           fontSize: Math.max(8, Math.min(11, baseSize / 5)),
           color: '#c8d4e6',
-          fontFamily: 'Outfit, sans-serif',
+          fontFamily: 'Inter, sans-serif',
           formatter: n.name.length > 6 ? n.name.slice(0, 5) + '…' : n.name,
         },
       }
@@ -154,14 +152,12 @@ export function KnowledgeGraph({ viewMode }: Props) {
         source: e.source,
         target: e.target,
         lineStyle: {
-          color: RELATION_COLORS[e.relation_type] || '#2a3a56',
+          color: RELATION_COLORS[e.relation_type] || '#2a2e3a',
           width: e.relation_type === 'prerequisite' ? 2 : 1,
           curveness: e.relation_type === 'parallel' ? 0 : 0.15,
           type: e.relation_type === 'parallel' ? 'dashed' : 'solid',
         },
-        edgeLabel: {
-          show: false,
-        },
+        edgeLabel: { show: false },
       }))
   }, [edges, nodeIds])
 
@@ -169,11 +165,11 @@ export function KnowledgeGraph({ viewMode }: Props) {
     const base = {
       tooltip: {
         trigger: 'item' as const,
-        backgroundColor: '#111827',
-        borderColor: '#1e2d48',
+        backgroundColor: '#1a1d27',
+        borderColor: '#2a2e3a',
         borderWidth: 1,
         padding: [8, 12],
-        textStyle: { fontSize: 11, fontFamily: 'Outfit, sans-serif', color: '#e8edf5' },
+        textStyle: { fontSize: 11, fontFamily: 'Inter, sans-serif', color: '#e5e7eb' },
         formatter: (params: any) => {
           if (params.dataType === 'node') {
             const d = params.data
@@ -183,13 +179,13 @@ export function KnowledgeGraph({ viewMode }: Props) {
             const bookCount = (d as any).textbook_count || 1
             const catColor = CATEGORY_COLORS[d.category] || '#6b7280'
             const freqBadge = bookCount > 1
-              ? `<span style="display:inline-block;background:rgba(245,158,11,0.15);color:#f59e0b;padding:1px 6px;border-radius:4px;font-size:9px;margin-left:4px;">跨${bookCount}本</span>`
+              ? `<span style="display:inline-block;background:rgba(245,158,11,0.15);color:#f59e0b;padding:1px 6px;border-radius:3px;font-size:9px;margin-left:4px;">跨${bookCount}本</span>`
               : ''
             return `
               <div style="max-width:280px">
                 <div style="font-size:12px;font-weight:600;margin-bottom:3px;">${d.name}${freqBadge}</div>
                 <div style="display:inline-block;background:${catColor}22;color:${catColor};padding:1px 6px;border-radius:3px;font-size:9px;margin-bottom:4px;">${d.category}</div>
-                <div style="font-size:10px;color:#8899b4;line-height:1.4;">${def}</div>
+                <div style="font-size:10px;color:#9ca3af;line-height:1.4;">${def}</div>
               </div>`
           }
           if (params.dataType === 'edge') {
@@ -203,7 +199,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
       },
       legend: {
         data: categories.map(c => c.name),
-        textStyle: { color: '#4a5d7a', fontSize: 9, fontFamily: 'Outfit, sans-serif' },
+        textStyle: { color: '#6b7280', fontSize: 9, fontFamily: 'Inter, sans-serif' },
         bottom: 8,
         itemWidth: 10,
         itemHeight: 10,
@@ -227,10 +223,10 @@ export function KnowledgeGraph({ viewMode }: Props) {
           symbolSize: 8,
           label: {
             fontSize: 9,
-            color: '#8899b4',
-            fontFamily: 'Outfit, sans-serif',
+            color: '#9ca3af',
+            fontFamily: 'Inter, sans-serif',
           },
-          lineStyle: { color: '#1e2d48', width: 1 },
+          lineStyle: { color: '#2a2e3a', width: 1 },
           leaves: {
             label: { fontSize: 9, color: '#c8d4e6' },
           },
@@ -264,7 +260,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
           focus: 'adjacency' as const,
           itemStyle: {
             shadowBlur: 20,
-            shadowColor: 'rgba(59,130,246,0.5)',
+            shadowColor: 'rgba(59,130,246,0.4)',
           },
           lineStyle: { width: 3 },
         },
@@ -288,20 +284,20 @@ export function KnowledgeGraph({ viewMode }: Props) {
     <div className="flex-1 relative h-full">
       {/* Search and filter bar */}
       {nodes.length > 0 && (
-        <div className="absolute top-3 left-3 z-10 flex flex-col gap-2 animate-slide-in-up">
+        <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
           {/* Search */}
           <div className="relative">
-            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" />
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-faint" />
             <input
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="搜索知识点..."
-              className="bg-abyss/80 backdrop-blur-sm border border-border rounded-lg pl-7 pr-7 py-1.5 text-[11px] text-text-primary placeholder-text-muted w-52 focus:border-accent-blue/50 focus:outline-none transition-colors"
+              className="bg-raised border border-border rounded pl-7 pr-7 py-1.5 text-[11px] text-text placeholder-text-faint w-52 focus:border-blue/50 focus:outline-none transition-colors duration-200"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-faint hover:text-text-dim"
               >
                 <X size={12} />
               </button>
@@ -317,11 +313,11 @@ export function KnowledgeGraph({ viewMode }: Props) {
                 <button
                   key={cat}
                   onClick={() => toggleCategory(cat)}
-                  className="text-[9px] px-1.5 py-0.5 rounded-md border transition-all duration-150"
+                  className="text-[9px] px-1.5 py-0.5 rounded border transition-all duration-200"
                   style={{
-                    borderColor: isActive ? color + '60' : 'transparent',
-                    backgroundColor: isActive ? color + '15' : 'rgba(26,34,54,0.6)',
-                    color: isActive ? color : '#4a5d7a',
+                    borderColor: isActive ? color + '60' : '#2a2e3a',
+                    backgroundColor: isActive ? color + '15' : '#222633',
+                    color: isActive ? color : '#6b7280',
                   }}
                 >
                   {cat}
@@ -331,7 +327,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
             {(searchTerm || activeCategories.size > 0) && (
               <button
                 onClick={resetFilters}
-                className="text-[9px] px-1.5 py-0.5 rounded-md text-text-muted hover:text-text-secondary flex items-center gap-0.5"
+                className="text-[9px] px-1.5 py-0.5 rounded text-text-faint hover:text-text-dim flex items-center gap-0.5"
               >
                 <RotateCcw size={8} />
                 重置
@@ -340,21 +336,21 @@ export function KnowledgeGraph({ viewMode }: Props) {
           </div>
 
           {/* Color mode toggle */}
-          <div className="bg-abyss/80 backdrop-blur-sm border border-border rounded-lg px-2.5 py-1.5">
-            <div className="text-[9px] text-text-muted mb-1">着色方式</div>
+          <div className="bg-raised border border-border rounded px-2.5 py-1.5">
+            <div className="text-[9px] text-text-faint mb-1">着色方式</div>
             <div className="flex gap-1">
               <button
                 onClick={() => setColorMode('category')}
-                className={`text-[9px] px-2 py-0.5 rounded-md transition-all ${
-                  colorMode === 'category' ? 'bg-accent-blue/15 text-accent-blue' : 'text-text-muted hover:text-text-secondary'
+                className={`text-[9px] px-2 py-0.5 rounded transition-all duration-200 ${
+                  colorMode === 'category' ? 'bg-blue/15 text-blue' : 'text-text-faint hover:text-text-dim'
                 }`}
               >
                 按分类
               </button>
               <button
                 onClick={() => setColorMode('textbook')}
-                className={`text-[9px] px-2 py-0.5 rounded-md transition-all ${
-                  colorMode === 'textbook' ? 'bg-accent-blue/15 text-accent-blue' : 'text-text-muted hover:text-text-secondary'
+                className={`text-[9px] px-2 py-0.5 rounded transition-all duration-200 ${
+                  colorMode === 'textbook' ? 'bg-blue/15 text-blue' : 'text-text-faint hover:text-text-dim'
                 }`}
               >
                 按教材
@@ -363,8 +359,8 @@ export function KnowledgeGraph({ viewMode }: Props) {
           </div>
 
           {/* Edge legend */}
-          <div className="bg-abyss/80 backdrop-blur-sm border border-border rounded-lg px-2.5 py-1.5">
-            <div className="text-[9px] text-text-muted mb-1">关系类型</div>
+          <div className="bg-raised border border-border rounded px-2.5 py-1.5">
+            <div className="text-[9px] text-text-faint mb-1">关系类型</div>
             <div className="flex flex-wrap gap-x-3 gap-y-0.5">
               {Object.entries(RELATION_LABELS).map(([type, label]) => (
                 <div key={type} className="flex items-center gap-1">
@@ -375,21 +371,21 @@ export function KnowledgeGraph({ viewMode }: Props) {
                       borderTop: type === 'parallel' ? '1px dashed' : 'none',
                     }}
                   />
-                  <span className="text-[9px] text-text-muted">{label}</span>
+                  <span className="text-[9px] text-text-faint">{label}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Textbook color legend (when in textbook mode) */}
+          {/* Textbook color legend */}
           {colorMode === 'textbook' && (
-            <div className="bg-abyss/80 backdrop-blur-sm border border-border rounded-lg px-2.5 py-1.5">
-              <div className="text-[9px] text-text-muted mb-1">教材来源</div>
+            <div className="bg-raised border border-border rounded px-2.5 py-1.5">
+              <div className="text-[9px] text-text-faint mb-1">教材来源</div>
               <div className="flex flex-wrap gap-x-2 gap-y-0.5">
                 {Object.entries(TEXTBOOK_COLORS).map(([name, color]) => (
                   <div key={name} className="flex items-center gap-1">
                     <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: color }} />
-                    <span className="text-[8px] text-text-muted">{name.replace(/^\d+_/, '')}</span>
+                    <span className="text-[8px] text-text-faint">{name.replace(/^\d+_/, '')}</span>
                   </div>
                 ))}
               </div>
@@ -410,8 +406,8 @@ export function KnowledgeGraph({ viewMode }: Props) {
       ) : (
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-surface/50 border border-border flex items-center justify-center">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2a3a56" strokeWidth="1.5">
+            <div className="w-16 h-16 mx-auto mb-4 rounded bg-raised border border-border flex items-center justify-center">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2a2e3a" strokeWidth="1.5">
                 <circle cx="12" cy="12" r="3" />
                 <circle cx="5" cy="6" r="2" />
                 <circle cx="19" cy="6" r="2" />
@@ -423,23 +419,20 @@ export function KnowledgeGraph({ viewMode }: Props) {
                 <line x1="14.5" y1="13.5" x2="17.5" y2="16.5" />
               </svg>
             </div>
-            <div className="text-sm text-text-secondary font-medium">上传并提取教材</div>
-            <div className="text-[11px] text-text-muted mt-1">知识图谱将在此显示</div>
+            <div className="text-sm text-text-dim font-medium">上传并提取教材</div>
+            <div className="text-[11px] text-text-faint mt-1">知识图谱将在此显示</div>
           </div>
         </div>
       )}
 
-      {/* Node detail panel */}
       <NodeDetail />
     </div>
   )
 }
 
-// Build tree data from flat nodes/edges
 function buildTreeData(nodes: any[], edges: any[]) {
   if (nodes.length === 0) return { name: 'empty', children: [] }
 
-  // Find root nodes (nodes with no incoming edges)
   const targetIds = new Set(edges.map(e => e.target))
   const roots = nodes.filter(n => !targetIds.has(n.id))
   if (roots.length === 0) roots.push(nodes[0])

@@ -8,15 +8,15 @@ export function CenterPanel() {
   const [viewMode, setViewMode] = useState<ViewMode>('force')
 
   return (
-    <div className="flex-1 relative bg-void overflow-hidden bg-grid">
+    <div className="flex-1 relative bg-bg overflow-hidden">
       {/* View mode toggle */}
-      <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-abyss/80 backdrop-blur-sm border border-border rounded-lg p-0.5">
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-0.5 bg-raised border border-border rounded p-0.5">
         <button
           onClick={() => setViewMode('force')}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-medium transition-all duration-200 ${
             viewMode === 'force'
-              ? 'bg-accent-blue/15 text-accent-blue'
-              : 'text-text-muted hover:text-text-secondary'
+              ? 'bg-blue/15 text-blue'
+              : 'text-text-faint hover:text-text-dim'
           }`}
         >
           <Network size={12} />
@@ -24,10 +24,10 @@ export function CenterPanel() {
         </button>
         <button
           onClick={() => setViewMode('tree')}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-medium transition-all duration-200 ${
             viewMode === 'tree'
-              ? 'bg-accent-blue/15 text-accent-blue'
-              : 'text-text-muted hover:text-text-secondary'
+              ? 'bg-blue/15 text-blue'
+              : 'text-text-faint hover:text-text-dim'
           }`}
         >
           <GitFork size={12} />

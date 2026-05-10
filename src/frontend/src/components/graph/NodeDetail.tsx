@@ -26,7 +26,6 @@ export function NodeDetail() {
   const catColor = CATEGORY_COLORS[selectedNode.category] || '#6b7280'
   const bookCount = (selectedNode as any).textbook_count || 1
 
-  // Find connected nodes
   const connected = edges
     .filter(e => e.source === selectedNode.id || e.target === selectedNode.id)
     .map(e => {
@@ -38,20 +37,20 @@ export function NodeDetail() {
     .slice(0, 10)
 
   return (
-    <div className="absolute right-0 top-0 w-80 h-full bg-abyss/95 backdrop-blur-md border-l border-border z-10 overflow-auto animate-slide-in-right">
+    <div className="absolute right-0 top-0 w-80 h-full bg-surface border-l border-border z-10 overflow-auto animate-slide-in-right">
       {/* Header */}
-      <div className="sticky top-0 bg-abyss/90 backdrop-blur-sm border-b border-border px-4 py-3 flex items-start justify-between">
+      <div className="sticky top-0 bg-surface border-b border-border px-4 py-3 flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-text-primary truncate">{selectedNode.name}</h3>
+          <h3 className="text-sm font-semibold text-text truncate">{selectedNode.name}</h3>
           <div className="flex items-center gap-1.5 mt-1">
             <span
-              className="text-[9px] px-1.5 py-0.5 rounded-md font-medium"
+              className="text-[9px] px-1.5 py-0.5 rounded font-medium"
               style={{ backgroundColor: catColor + '18', color: catColor }}
             >
               {selectedNode.category}
             </span>
             {bookCount > 1 && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-accent-amber/15 text-accent-amber font-medium">
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber/15 text-amber font-medium">
                 跨{bookCount}本教材
               </span>
             )}
@@ -59,7 +58,7 @@ export function NodeDetail() {
         </div>
         <button
           onClick={() => setSelectedNode(null)}
-          className="text-text-muted hover:text-text-secondary p-1 rounded-md hover:bg-surface transition-colors ml-2"
+          className="text-text-faint hover:text-text-dim p-1 rounded hover:bg-raised transition-colors duration-200 ml-2"
         >
           <X size={14} />
         </button>
@@ -69,8 +68,8 @@ export function NodeDetail() {
       <div className="p-4 space-y-4">
         {/* Definition */}
         <div>
-          <label className="text-[9px] font-medium text-text-muted uppercase tracking-wider block mb-1.5">定义</label>
-          <p className="text-[11px] text-text-secondary leading-relaxed">{selectedNode.definition}</p>
+          <label className="text-[9px] font-medium text-text-faint uppercase tracking-wider block mb-1.5">定义</label>
+          <p className="text-[11px] text-text-dim leading-relaxed">{selectedNode.definition}</p>
         </div>
 
         {/* Meta info */}
@@ -84,7 +83,7 @@ export function NodeDetail() {
         {/* Connected nodes */}
         {connected.length > 0 && (
           <div>
-            <label className="text-[9px] font-medium text-text-muted uppercase tracking-wider block mb-2">
+            <label className="text-[9px] font-medium text-text-faint uppercase tracking-wider block mb-2">
               关联节点 ({connected.length})
             </label>
             <div className="space-y-1">
@@ -95,18 +94,18 @@ export function NodeDetail() {
                   <button
                     key={i}
                     onClick={() => setSelectedNode(c.otherNode)}
-                    className="w-full text-left bg-surface/50 hover:bg-raised/80 rounded-md px-2.5 py-1.5 transition-colors group"
+                    className="w-full text-left bg-raised hover:bg-border rounded px-2.5 py-1.5 transition-colors duration-200 group"
                   >
                     <div className="flex items-center gap-1.5">
                       <div
                         className="w-1.5 h-1.5 rounded-full shrink-0"
                         style={{ backgroundColor: otherCatColor }}
                       />
-                      <span className="text-[10px] text-text-primary truncate flex-1">{c.otherNode.name}</span>
-                      <span className="text-[9px] text-text-muted shrink-0">
+                      <span className="text-[10px] text-text truncate flex-1">{c.otherNode.name}</span>
+                      <span className="text-[9px] text-text-faint shrink-0">
                         {RELATION_LABELS[c.relation_type] || c.relation_type}
                       </span>
-                      <ArrowRight size={8} className="text-text-muted group-hover:text-text-secondary shrink-0" />
+                      <ArrowRight size={8} className="text-text-faint group-hover:text-text-dim shrink-0" />
                     </div>
                   </button>
                 )
@@ -121,12 +120,12 @@ export function NodeDetail() {
 
 function MetaItem({ icon, label, value, mono = false }: { icon: React.ReactNode; label: string; value: string; mono?: boolean }) {
   return (
-    <div className="bg-surface/40 rounded-md px-2 py-1.5">
-      <div className="flex items-center gap-1 text-text-muted mb-0.5">
+    <div className="bg-raised rounded px-2 py-1.5">
+      <div className="flex items-center gap-1 text-text-faint mb-0.5">
         {icon}
         <span className="text-[8px] uppercase tracking-wider">{label}</span>
       </div>
-      <div className={`text-[10px] text-text-secondary truncate ${mono ? 'font-mono' : ''}`}>{value}</div>
+      <div className={`text-[10px] text-text-dim truncate ${mono ? 'font-mono' : ''}`}>{value}</div>
     </div>
   )
 }
