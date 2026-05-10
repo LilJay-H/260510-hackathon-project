@@ -3,6 +3,12 @@ import { useStore } from '../../store/useStore'
 import { api } from '../../api/client'
 import { Upload, FileText, Sparkles } from 'lucide-react'
 
+/**
+ * 左侧面板 — w-60 (240px)
+ * 功能: 上传教材 + 教材列表 + 图谱统计
+ * 样式: bg-surface, 1px border-right, 圆角 6px
+ * 响应式: 通过 responsive-left-panel class 在小屏自动隐藏
+ */
 export function LeftPanel() {
   const { textbooks, addTextbook, setGraphData, setLoading, nodes, edges, loading } = useStore()
   const [uploadingFile, setUploadingFile] = useState<string | null>(null)
@@ -64,34 +70,35 @@ export function LeftPanel() {
   const isUploading = loading['upload']
 
   return (
-    <aside className="w-60 border-r border-border flex flex-col bg-surface shrink-0 overflow-hidden">
-      {/* Upload area */}
+    <aside className="responsive-left-panel w-60 border-r border-border flex flex-col bg-surface shrink-0 overflow-hidden">
+      {/* === 上传区域 === */}
       <div className="p-3 border-b border-border">
-        <div className="text-[10px] font-medium text-text-faint uppercase tracking-wider mb-2">上传教材</div>
+        <div className="text-xs font-medium text-text-faint uppercase tracking-wider mb-2">上传教材</div>
+        {/* 拖拽上传区域: 圆角6px, 虚线边框, 拖入时高亮 */}
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
           onClick={() => !isUploading && inputRef.current?.click()}
-          className={`border border-dashed rounded p-4 text-center cursor-pointer transition-all duration-200 ${
+          className={`border border-dashed rounded-md p-4 text-center cursor-pointer transition-all duration-200 ${
             isUploading
               ? 'border-blue/50 bg-blue/5'
               : dragOver
                 ? 'border-cyan/60 bg-cyan/5'
-                : 'border-border hover:border-text-faint'
+                : 'border-border hover:border-text-faint hover:bg-raised/50'
           }`}
         >
           {isUploading ? (
             <div className="flex flex-col items-center gap-2">
               <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin" />
-              <span className="text-[11px] text-blue font-medium">解析中</span>
-              <span className="text-[10px] text-text-faint truncate max-w-[180px]">{uploadingFile}</span>
+              <span className="text-sm text-blue font-medium">解析中</span>
+              <span className="text-xs text-text-faint truncate max-w-[180px]">{uploadingFile}</span>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-1.5">
               <Upload size={16} className="text-text-faint" />
-              <span className="text-[11px] text-text-dim">拖拽或点击上传</span>
-              <span className="text-[9px] text-text-faint">PDF / MD / TXT</span>
+              <span className="text-sm text-text-dim">拖拽或点击上传</span>
+              <span className="text-xs text-text-faint">PDF / MD / TXT</span>
             </div>
           )}
         </div>
@@ -105,39 +112,42 @@ export function LeftPanel() {
         />
       </div>
 
-      {/* Textbook list */}
+      {/* === 教材列表 === */}
       <div className="flex-1 overflow-auto p-3">
-        <div className="text-[10px] font-medium text-text-faint uppercase tracking-wider mb-2">
+        <div className="text-xs font-medium text-text-faint uppercase tracking-wider mb-2">
           教材列表 <span className="text-text-faint">({textbooks.length})</span>
         </div>
         <div className="flex flex-col gap-1.5">
           {textbooks.map((t) => {
             const ext = t.id.includes('.') ? t.id.split('.').pop()?.toUpperCase() : 'PDF'
             return (
+              /* 教材卡片: 圆角6px, 1px边框, hover时蓝色边框, 阴影 shadow-sm */
               <div
                 key={t.id}
-                className="bg-raised rounded p-2.5 transition-colors duration-200 border border-border hover:border-blue/30"
+                className="bg-raised rounded-md p-2.5 transition-all duration-200 border border-border hover:border-blue/30 shadow-sm"
               >
                 <div className="flex items-start gap-2">
+                  {/* 文件类型图标 */}
                   <div className="w-6 h-6 rounded bg-blue/10 flex items-center justify-center shrink-0 mt-0.5">
                     <FileText size={12} className="text-blue" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[11px] font-medium text-text truncate">{t.title}</div>
+                    <div className="text-sm font-medium text-text truncate">{t.title}</div>
                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      <span className="text-[8px] px-1 py-0 rounded bg-surface text-text-faint border border-border">{ext}</span>
-                      <span className="text-[9px] text-text-faint font-mono">
+                      <span className="text-2xs px-1 py-0 rounded bg-surface text-text-faint border border-border">{ext}</span>
+                      <span className="text-xs text-text-faint font-mono">
                         {(t.total_chars / 10000).toFixed(1)}万字
                       </span>
-                      <span className="text-[9px] text-text-faint">·</span>
-                      <span className="text-[9px] text-text-faint font-mono">{t.chapters}章</span>
+                      <span className="text-xs text-text-faint">·</span>
+                      <span className="text-xs text-text-faint font-mono">{t.chapters}章</span>
                     </div>
                   </div>
                 </div>
+                {/* 提取知识按钮 */}
                 <button
                   onClick={() => handleExtract(t.id)}
                   disabled={loading['extract']}
-                  className="mt-2 w-full flex items-center justify-center gap-1.5 text-[10px] font-medium bg-blue/10 text-blue rounded py-1.5 hover:bg-blue/20 disabled:opacity-40 transition-colors duration-200"
+                  className="mt-2 w-full flex items-center justify-center gap-1.5 text-xs font-medium bg-blue/10 text-blue rounded-md py-1.5 hover:bg-blue/20 disabled:opacity-40 transition-colors duration-200"
                 >
                   {loading['extract'] ? (
                     <>
@@ -154,19 +164,20 @@ export function LeftPanel() {
               </div>
             )
           })}
+          {/* 空状态 */}
           {textbooks.length === 0 && !isUploading && (
             <div className="text-center py-8">
               <FileText size={24} className="mx-auto text-text-faint/30 mb-2" />
-              <div className="text-[11px] text-text-faint">暂无教材</div>
-              <div className="text-[9px] text-text-faint/60 mt-1">上传 PDF/MD/TXT 开始</div>
+              <div className="text-sm text-text-faint">暂无教材</div>
+              <div className="text-xs text-text-faint/60 mt-1">上传 PDF/MD/TXT 开始</div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Bottom stats */}
+      {/* === 底部图谱统计 === */}
       <div className="p-3 border-t border-border">
-        <div className="flex items-center justify-between text-[10px]">
+        <div className="flex items-center justify-between text-xs">
           <span className="text-text-faint">图谱统计</span>
           <span className="font-mono text-text-dim">{nodes.length} 节点 · {edges.length} 关系</span>
         </div>

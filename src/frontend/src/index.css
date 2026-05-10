@@ -1,33 +1,133 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Design Tokens — 现代极简深色模式学术工具风格
+   所有配色、圆角、间距、字号、动画均在此统一管理
+   ============================================================ */
 @theme {
+  /* --- 字体 --- */
   --font-sans: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  --color-bg: #0f1117;
-  --color-surface: #1a1d27;
-  --color-raised: #222633;
-  --color-border: #2a2e3a;
-  --color-border-focus: #3b82f6;
-  --color-text: #e5e7eb;
-  --color-text-dim: #9ca3af;
-  --color-text-faint: #6b7280;
-  --color-blue: #3b82f6;
-  --color-green: #10b981;
-  --color-red: #ef4444;
-  --color-amber: #f59e0b;
-  --color-purple: #8b5cf6;
-  --color-cyan: #06b6d4;
+  /* --- 配色体系 --- */
+  --color-bg: #0f1117;           /* 最深背景 */
+  --color-surface: #1a1d27;      /* 面板/侧边栏背景 */
+  --color-raised: #222633;       /* 卡片/按钮背景 */
+  --color-border: #2a2e3a;       /* 边框/分割线 */
+  --color-border-focus: #3b82f6; /* 聚焦态边框 */
+  --color-text: #e5e7eb;         /* 主文本 */
+  --color-text-dim: #9ca3af;     /* 次要文本 */
+  --color-text-faint: #6b7280;   /* 弱化文本 */
+  --color-blue: #3b82f6;         /* 主强调色 */
+  --color-green: #10b981;        /* 成功/正向 */
+  --color-red: #ef4444;          /* 错误/删除 */
+  --color-amber: #f59e0b;        /* 警告/跨教材 */
+  --color-purple: #8b5cf6;       /* 辅助色 */
+  --color-cyan: #06b6d4;         /* 辅助色 */
+
+  /* --- 圆角 --- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* --- 间距 --- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+
+  /* --- 字号 --- */
+  --text-2xs: 8px;
+  --text-xs: 10px;
+  --text-sm: 11px;
+  --text-base: 12px;
+  --text-md: 13px;
+  --text-lg: 14px;
+
+  /* --- 动画 --- */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+
+  /* --- 阴影 --- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body, #root { height: 100%; overflow: hidden; }
-body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); -webkit-font-smoothing: antialiased; }
+/* ============================================================
+   全局样式重置
+   ============================================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-::-webkit-scrollbar { width: 4px; }
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  font-size: var(--text-base);
+}
+
+/* ============================================================
+   自定义滚动条 — 统一深色窄滚动条
+   ============================================================ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-text-faint); }
 
-@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-.animate-fade-in { animation: fade-in 0.2s ease-out; }
+/* ============================================================
+   全局过渡动画 — 所有交互 200ms 平滑过渡
+   ============================================================ */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in var(--duration-normal) ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right var(--duration-slow) cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up var(--duration-normal) ease-out;
+}
+
+/* ============================================================
+   响应式适配 — 小屏幕下自动折叠侧边栏
+   ============================================================ */
+@media (max-width: 1280px) {
+  .responsive-left-panel { width: 200px !important; }
+  .responsive-right-panel { width: 320px !important; }
+}
+
+@media (max-width: 1024px) {
+  .responsive-left-panel { display: none !important; }
+  .responsive-right-panel { width: 280px !important; }
+}

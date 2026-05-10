@@ -2,6 +2,11 @@ import { useStore } from '../../store/useStore'
 import { api } from '../../api/client'
 import { Zap, ArrowRight, GitMerge, Trash2, Shield } from 'lucide-react'
 
+/**
+ * 跨教材整合面板
+ * 功能: 执行整合 + 前后对比 + 决策分布 + 决策列表
+ * 样式: 圆角6px 卡片, 1px边框, shadow-sm, 进度条动画
+ */
 export function IntegrationTab() {
   const { decisions, compressionRatio, setDecisions, setCompressionRatio, setGraphData, setLoading, loading, nodes, edges, mergeStats, setMergeStats, textbooks } = useStore()
 
@@ -34,11 +39,11 @@ export function IntegrationTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Action button */}
+      {/* 主操作按钮: 蓝色实底, 圆角6px, shadow-sm */}
       <button
         onClick={handleMerge}
         disabled={loading['merge']}
-        className="w-full flex items-center justify-center gap-2 bg-blue text-white text-xs font-medium py-2.5 px-4 rounded hover:bg-blue/90 disabled:opacity-40 transition-opacity duration-200"
+        className="w-full flex items-center justify-center gap-2 bg-blue text-white text-base font-medium py-2.5 px-4 rounded-md hover:bg-blue/90 disabled:opacity-40 transition-all duration-200 shadow-sm"
       >
         {loading['merge'] ? (
           <>
@@ -53,33 +58,37 @@ export function IntegrationTab() {
         )}
       </button>
 
-      {/* Before / After comparison */}
+      {/* 整合前后对比卡片 */}
       {mergeStats && (
-        <div className="bg-raised rounded p-3.5 border border-border">
-          <div className="text-[10px] font-medium text-text-faint uppercase tracking-wider mb-3">整合前后对比</div>
+        <div className="bg-raised rounded-md p-3.5 border border-border shadow-sm">
+          <div className="text-xs font-medium text-text-faint uppercase tracking-wider mb-3">整合前后对比</div>
           <div className="flex items-center gap-3">
+            {/* 整合前 */}
             <div className="flex-1 text-center">
-              <div className="text-[9px] text-text-faint mb-1">整合前</div>
+              <div className="text-xs text-text-faint mb-1">整合前</div>
               <div className="text-lg font-mono font-semibold text-text">{mergeStats.beforeNodes}</div>
-              <div className="text-[9px] text-text-faint">节点</div>
+              <div className="text-xs text-text-faint">节点</div>
             </div>
+            {/* 箭头 + 压缩率 */}
             <div className="flex flex-col items-center gap-1">
               <ArrowRight size={16} className="text-blue" />
-              <div className="text-[9px] font-mono text-green">
+              <div className="text-xs font-mono text-green">
                 {((1 - mergeStats.afterNodes / Math.max(mergeStats.beforeNodes, 1)) * 100).toFixed(0)}%↓
               </div>
             </div>
+            {/* 整合后 */}
             <div className="flex-1 text-center">
-              <div className="text-[9px] text-text-faint mb-1">整合后</div>
+              <div className="text-xs text-text-faint mb-1">整合后</div>
               <div className="text-lg font-mono font-semibold text-blue">{mergeStats.afterNodes}</div>
-              <div className="text-[9px] text-text-faint">节点</div>
+              <div className="text-xs text-text-faint">节点</div>
             </div>
           </div>
 
+          {/* 压缩比进度条 */}
           <div className="mt-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[9px] text-text-faint">压缩比</span>
-              <span className={`text-[11px] font-mono font-semibold ${compressionRatio <= 0.3 ? 'text-green' : 'text-amber'}`}>
+              <span className="text-xs text-text-faint">压缩比</span>
+              <span className={`text-sm font-mono font-semibold ${compressionRatio <= 0.3 ? 'text-green' : 'text-amber'}`}>
                 {(compressionRatio * 100).toFixed(1)}%
               </span>
             </div>
@@ -92,16 +101,17 @@ export function IntegrationTab() {
                 }}
               />
             </div>
-            <div className="text-[8px] text-text-faint mt-0.5 text-right">目标 ≤ 30%</div>
+            <div className="text-2xs text-text-faint mt-0.5 text-right">目标 ≤ 30%</div>
           </div>
         </div>
       )}
 
-      {/* Decision distribution */}
+      {/* 决策分布可视化 */}
       {decisions.length > 0 && (
-        <div className="bg-raised rounded p-3.5 border border-border">
-          <div className="text-[10px] font-medium text-text-faint uppercase tracking-wider mb-2.5">决策分布</div>
+        <div className="bg-raised rounded-md p-3.5 border border-border shadow-sm">
+          <div className="text-xs font-medium text-text-faint uppercase tracking-wider mb-2.5">决策分布</div>
 
+          {/* 堆叠进度条 */}
           <div className="flex h-2 rounded-full overflow-hidden bg-bg mb-2.5">
             {mergeCount > 0 && (
               <div
@@ -123,6 +133,7 @@ export function IntegrationTab() {
             )}
           </div>
 
+          {/* 图例 */}
           <div className="flex gap-3">
             <LegendItem color="#3b82f6" icon={<GitMerge size={8} />} label="合并" count={mergeCount} />
             <LegendItem color="#10b981" icon={<Shield size={8} />} label="保留" count={keepCount} />
@@ -131,13 +142,13 @@ export function IntegrationTab() {
         </div>
       )}
 
-      {/* Textbook coverage */}
+      {/* 教材覆盖情况 */}
       {textbooks.length > 0 && (
-        <div className="bg-raised rounded p-3.5 border border-border">
-          <div className="text-[10px] font-medium text-text-faint uppercase tracking-wider mb-2">教材覆盖 ({textbooks.length}/7)</div>
+        <div className="bg-raised rounded-md p-3.5 border border-border shadow-sm">
+          <div className="text-xs font-medium text-text-faint uppercase tracking-wider mb-2">教材覆盖 ({textbooks.length}/7)</div>
           <div className="flex flex-wrap gap-1">
             {textbooks.map(t => (
-              <span key={t.id} className="text-[9px] px-2 py-0.5 rounded bg-blue/10 text-blue border border-blue/20">
+              <span key={t.id} className="text-xs px-2 py-0.5 rounded bg-blue/10 text-blue border border-blue/20">
                 {t.title}
               </span>
             ))}
@@ -145,38 +156,39 @@ export function IntegrationTab() {
         </div>
       )}
 
-      {/* Decision list */}
+      {/* 整合决策列表 */}
       <div className="flex flex-col gap-1.5">
-        <div className="text-[10px] font-medium text-text-faint uppercase tracking-wider">
+        <div className="text-xs font-medium text-text-faint uppercase tracking-wider">
           整合决策 <span className="text-text-faint/60">({decisions.length})</span>
         </div>
         {decisions.length === 0 && (
           <div className="text-center py-6">
             <GitMerge size={20} className="mx-auto text-text-faint/20 mb-2" />
-            <div className="text-[11px] text-text-faint">点击上方按钮执行整合</div>
+            <div className="text-sm text-text-faint">点击上方按钮执行整合</div>
           </div>
         )}
         {decisions.slice(0, 30).map((d) => (
+          /* 决策项: 圆角6px, hover高亮, 1px边框 */
           <div
             key={d.decision_id}
-            className="bg-raised hover:bg-border rounded px-3 py-2 transition-colors duration-200 border border-transparent hover:border-border"
+            className="bg-raised hover:bg-border rounded-md px-3 py-2 transition-colors duration-200 border border-transparent hover:border-border shadow-sm"
           >
             <div className="flex items-center gap-2">
-              <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+              <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                 d.action === 'merge' ? 'bg-blue/15 text-blue' :
                 d.action === 'remove' ? 'bg-red/15 text-red' :
                 'bg-green/15 text-green'
               }`}>
                 {d.action === 'merge' ? '合并' : d.action === 'remove' ? '删除' : '保留'}
               </span>
-              <span className="text-[9px] text-text-faint font-mono flex-1 truncate">{d.affected_nodes.join(' ↔ ')}</span>
-              <span className="text-[9px] text-text-faint font-mono">{(d.confidence * 100).toFixed(0)}%</span>
+              <span className="text-xs text-text-faint font-mono flex-1 truncate">{d.affected_nodes.join(' ↔ ')}</span>
+              <span className="text-xs text-text-faint font-mono">{(d.confidence * 100).toFixed(0)}%</span>
             </div>
-            <p className="text-[10px] text-text-faint mt-1 leading-relaxed line-clamp-2">{d.reason}</p>
+            <p className="text-xs text-text-faint mt-1 leading-relaxed line-clamp-2">{d.reason}</p>
           </div>
         ))}
         {decisions.length > 30 && (
-          <div className="text-[9px] text-text-faint text-center py-1">
+          <div className="text-xs text-text-faint text-center py-1">
             显示前 30 条，共 {decisions.length} 条
           </div>
         )}
@@ -185,12 +197,13 @@ export function IntegrationTab() {
   )
 }
 
+/** 图例项: 圆点 + 标签 + 数量 */
 function LegendItem({ color, icon, label, count }: { color: string; icon: React.ReactNode; label: string; count: number }) {
   return (
     <div className="flex items-center gap-1">
       <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
-      <span className="text-[9px] text-text-faint">{label}</span>
-      <span className="text-[9px] font-mono text-text-dim">{count}</span>
+      <span className="text-xs text-text-faint">{label}</span>
+      <span className="text-xs font-mono text-text-dim">{count}</span>
     </div>
   )
 }

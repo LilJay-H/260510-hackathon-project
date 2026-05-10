@@ -5,6 +5,7 @@ import { NodeDetail } from './NodeDetail'
 import type { ViewMode } from '../layout/CenterPanel'
 import { Search, X, RotateCcw } from 'lucide-react'
 
+/** 节点分类配色 — 7种知识类型对应不同颜色 */
 const CATEGORY_COLORS: Record<string, string> = {
   '核心概念': '#3b82f6',
   '解剖结构': '#ef4444',
@@ -15,6 +16,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   '治疗原则': '#f97316',
 }
 
+/** 教材来源配色 — 用于"按教材"着色模式 */
 const TEXTBOOK_COLORS: Record<string, string> = {
   '01_局部解剖学': '#3b82f6',
   '02_组织学与胚胎学': '#ef4444',
@@ -26,6 +28,7 @@ const TEXTBOOK_COLORS: Record<string, string> = {
 }
 const TEXTBOOK_COLOR_LIST = Object.values(TEXTBOOK_COLORS)
 
+/** 节点形状映射 — 不同分类使用不同图形 */
 const CATEGORY_SYMBOLS: Record<string, string> = {
   '核心概念': 'circle',
   '解剖结构': 'roundRect',
@@ -36,11 +39,12 @@ const CATEGORY_SYMBOLS: Record<string, string> = {
   '治疗原则': 'star',
 }
 
+/** 边关系类型配色 */
 const RELATION_COLORS: Record<string, string> = {
-  prerequisite: '#ef4444',
-  parallel: '#6b7280',
-  contains: '#3b82f6',
-  applies_to: '#10b981',
+  prerequisite: '#ef4444',   /* 前置依赖: 红色 */
+  parallel: '#6b7280',       /* 并列关系: 灰色虚线 */
+  contains: '#3b82f6',       /* 包含关系: 蓝色 */
+  applies_to: '#10b981',     /* 应用关系: 绿色 */
 }
 
 const RELATION_LABELS: Record<string, string> = {
@@ -54,6 +58,12 @@ interface Props {
   viewMode: ViewMode
 }
 
+/**
+ * 知识图谱核心组件
+ * 功能: ECharts力导向/树状图 + 搜索 + 分类筛选 + 着色模式切换
+ * 交互: 节点点击查看详情, 缩放/拖拽, 高亮关联节点
+ * 样式: 圆角6px 控制面板, 1px边框, shadow-sm
+ */
 export function KnowledgeGraph({ viewMode }: Props) {
   const { nodes, edges, setSelectedNode } = useStore()
   const [searchTerm, setSearchTerm] = useState('')
@@ -61,6 +71,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
   const [colorMode, setColorMode] = useState<'category' | 'textbook'>('category')
   const chartRef = useRef<any>(null)
 
+  /** 计算每个节点的连接度 */
   const degreeMap = useMemo(() => {
     const map: Record<string, number> = {}
     for (const e of edges) {
@@ -72,6 +83,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
 
   const allCategories = useMemo(() => [...new Set(nodes.map(n => n.category))], [nodes])
 
+  /** 当未选择任何筛选时显示全部分类 */
   const displayCategories = activeCategories.size === 0 ? new Set(allCategories) : activeCategories
 
   const toggleCategory = (cat: string) => {
@@ -88,6 +100,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
     setSearchTerm('')
   }, [])
 
+  /** 过滤显示的节点 (最多300个) */
   const displayNodes = useMemo(() => {
     return nodes.slice(0, 300).filter(n => {
       if (!displayCategories.has(n.category)) return false
@@ -98,11 +111,13 @@ export function KnowledgeGraph({ viewMode }: Props) {
 
   const nodeIds = new Set(displayNodes.map(n => n.id))
 
+  /** 节点样式配置 — 大小随连接度和跨教材数动态调整 */
   const chartNodes = useMemo(() => {
     return displayNodes.map(n => {
       const degree = degreeMap[n.id] || 0
       const bookCount = (n as any).textbook_count || 1
       const isSearchMatch = searchTerm.length > 0 && (n.name.includes(searchTerm) || n.definition.includes(searchTerm))
+      /* 节点大小 = 基础12 + 连接度*2.5 + 跨教材数*5, 上限55 */
       const baseSize = Math.min(55, 12 + degree * 2.5 + bookCount * 5)
 
       let nodeColor: string
@@ -145,6 +160,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
 
   const categories = allCategories.map(c => ({ name: c }))
 
+  /** 边样式配置 — 根据关系类型设置颜色、线宽、虚实 */
   const chartEdges = useMemo(() => {
     return edges
       .filter(e => nodeIds.has(e.source) && nodeIds.has(e.target))
@@ -161,6 +177,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
       }))
   }, [edges, nodeIds])
 
+  /** ECharts 配置项 */
   const option = useMemo(() => {
     const base = {
       tooltip: {
@@ -179,12 +196,12 @@ export function KnowledgeGraph({ viewMode }: Props) {
             const bookCount = (d as any).textbook_count || 1
             const catColor = CATEGORY_COLORS[d.category] || '#6b7280'
             const freqBadge = bookCount > 1
-              ? `<span style="display:inline-block;background:rgba(245,158,11,0.15);color:#f59e0b;padding:1px 6px;border-radius:3px;font-size:9px;margin-left:4px;">跨${bookCount}本</span>`
+              ? `<span style="display:inline-block;background:rgba(245,158,11,0.15);color:#f59e0b;padding:1px 6px;border-radius:4px;font-size:9px;margin-left:4px;">跨${bookCount}本</span>`
               : ''
             return `
               <div style="max-width:280px">
                 <div style="font-size:12px;font-weight:600;margin-bottom:3px;">${d.name}${freqBadge}</div>
-                <div style="display:inline-block;background:${catColor}22;color:${catColor};padding:1px 6px;border-radius:3px;font-size:9px;margin-bottom:4px;">${d.category}</div>
+                <div style="display:inline-block;background:${catColor}22;color:${catColor};padding:1px 6px;border-radius:4px;font-size:9px;margin-bottom:4px;">${d.category}</div>
                 <div style="font-size:10px;color:#9ca3af;line-height:1.4;">${def}</div>
               </div>`
           }
@@ -282,17 +299,17 @@ export function KnowledgeGraph({ viewMode }: Props) {
 
   return (
     <div className="flex-1 relative h-full">
-      {/* Search and filter bar */}
+      {/* === 左上角搜索和筛选控制面板 === */}
       {nodes.length > 0 && (
         <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
-          {/* Search */}
+          {/* 搜索框: 圆角6px, 1px边框, shadow-sm */}
           <div className="relative">
             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-faint" />
             <input
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="搜索知识点..."
-              className="bg-raised border border-border rounded pl-7 pr-7 py-1.5 text-[11px] text-text placeholder-text-faint w-52 focus:border-blue/50 focus:outline-none transition-colors duration-200"
+              className="bg-raised border border-border rounded-md pl-7 pr-7 py-1.5 text-sm text-text placeholder-text-faint w-52 focus:border-blue/50 focus:outline-none transition-colors duration-200 shadow-sm"
             />
             {searchTerm && (
               <button
@@ -304,7 +321,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
             )}
           </div>
 
-          {/* Category filter chips */}
+          {/* 分类筛选芯片组 */}
           <div className="flex flex-wrap gap-1">
             {allCategories.map(cat => {
               const color = CATEGORY_COLORS[cat] || '#6b7280'
@@ -313,7 +330,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
                 <button
                   key={cat}
                   onClick={() => toggleCategory(cat)}
-                  className="text-[9px] px-1.5 py-0.5 rounded border transition-all duration-200"
+                  className="text-xs px-1.5 py-0.5 rounded border transition-all duration-200"
                   style={{
                     borderColor: isActive ? color + '60' : '#2a2e3a',
                     backgroundColor: isActive ? color + '15' : '#222633',
@@ -327,7 +344,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
             {(searchTerm || activeCategories.size > 0) && (
               <button
                 onClick={resetFilters}
-                className="text-[9px] px-1.5 py-0.5 rounded text-text-faint hover:text-text-dim flex items-center gap-0.5"
+                className="text-xs px-1.5 py-0.5 rounded text-text-faint hover:text-text-dim flex items-center gap-0.5"
               >
                 <RotateCcw size={8} />
                 重置
@@ -335,13 +352,13 @@ export function KnowledgeGraph({ viewMode }: Props) {
             )}
           </div>
 
-          {/* Color mode toggle */}
-          <div className="bg-raised border border-border rounded px-2.5 py-1.5">
-            <div className="text-[9px] text-text-faint mb-1">着色方式</div>
+          {/* 着色方式切换 */}
+          <div className="bg-raised border border-border rounded-md px-2.5 py-1.5 shadow-sm">
+            <div className="text-xs text-text-faint mb-1">着色方式</div>
             <div className="flex gap-1">
               <button
                 onClick={() => setColorMode('category')}
-                className={`text-[9px] px-2 py-0.5 rounded transition-all duration-200 ${
+                className={`text-xs px-2 py-0.5 rounded transition-all duration-200 ${
                   colorMode === 'category' ? 'bg-blue/15 text-blue' : 'text-text-faint hover:text-text-dim'
                 }`}
               >
@@ -349,7 +366,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
               </button>
               <button
                 onClick={() => setColorMode('textbook')}
-                className={`text-[9px] px-2 py-0.5 rounded transition-all duration-200 ${
+                className={`text-xs px-2 py-0.5 rounded transition-all duration-200 ${
                   colorMode === 'textbook' ? 'bg-blue/15 text-blue' : 'text-text-faint hover:text-text-dim'
                 }`}
               >
@@ -358,9 +375,9 @@ export function KnowledgeGraph({ viewMode }: Props) {
             </div>
           </div>
 
-          {/* Edge legend */}
-          <div className="bg-raised border border-border rounded px-2.5 py-1.5">
-            <div className="text-[9px] text-text-faint mb-1">关系类型</div>
+          {/* 关系类型图例 */}
+          <div className="bg-raised border border-border rounded-md px-2.5 py-1.5 shadow-sm">
+            <div className="text-xs text-text-faint mb-1">关系类型</div>
             <div className="flex flex-wrap gap-x-3 gap-y-0.5">
               {Object.entries(RELATION_LABELS).map(([type, label]) => (
                 <div key={type} className="flex items-center gap-1">
@@ -371,21 +388,21 @@ export function KnowledgeGraph({ viewMode }: Props) {
                       borderTop: type === 'parallel' ? '1px dashed' : 'none',
                     }}
                   />
-                  <span className="text-[9px] text-text-faint">{label}</span>
+                  <span className="text-xs text-text-faint">{label}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Textbook color legend */}
+          {/* 教材来源图例 (仅在按教材着色时显示) */}
           {colorMode === 'textbook' && (
-            <div className="bg-raised border border-border rounded px-2.5 py-1.5">
-              <div className="text-[9px] text-text-faint mb-1">教材来源</div>
+            <div className="bg-raised border border-border rounded-md px-2.5 py-1.5 shadow-sm">
+              <div className="text-xs text-text-faint mb-1">教材来源</div>
               <div className="flex flex-wrap gap-x-2 gap-y-0.5">
                 {Object.entries(TEXTBOOK_COLORS).map(([name, color]) => (
                   <div key={name} className="flex items-center gap-1">
                     <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: color }} />
-                    <span className="text-[8px] text-text-faint">{name.replace(/^\d+_/, '')}</span>
+                    <span className="text-2xs text-text-faint">{name.replace(/^\d+_/, '')}</span>
                   </div>
                 ))}
               </div>
@@ -394,7 +411,7 @@ export function KnowledgeGraph({ viewMode }: Props) {
         </div>
       )}
 
-      {/* Graph */}
+      {/* === 知识图谱画布 === */}
       {nodes.length > 0 ? (
         <ReactECharts
           ref={chartRef}
@@ -404,9 +421,10 @@ export function KnowledgeGraph({ viewMode }: Props) {
           notMerge={true}
         />
       ) : (
+        /* 空状态占位 */
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded bg-raised border border-border flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-raised border border-border flex items-center justify-center shadow-sm">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2a2e3a" strokeWidth="1.5">
                 <circle cx="12" cy="12" r="3" />
                 <circle cx="5" cy="6" r="2" />
@@ -419,17 +437,19 @@ export function KnowledgeGraph({ viewMode }: Props) {
                 <line x1="14.5" y1="13.5" x2="17.5" y2="16.5" />
               </svg>
             </div>
-            <div className="text-sm text-text-dim font-medium">上传并提取教材</div>
-            <div className="text-[11px] text-text-faint mt-1">知识图谱将在此显示</div>
+            <div className="text-md text-text-dim font-medium">上传并提取教材</div>
+            <div className="text-sm text-text-faint mt-1">知识图谱将在此显示</div>
           </div>
         </div>
       )}
 
+      {/* === 节点详情侧边面板 === */}
       <NodeDetail />
     </div>
   )
 }
 
+/** 构建树状图数据结构 — 从扁平节点和边转换 */
 function buildTreeData(nodes: any[], edges: any[]) {
   if (nodes.length === 0) return { name: 'empty', children: [] }
 
